@@ -2,43 +2,127 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snake Web3 Robinhood</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Snake Robinhood 🐍</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="style.css">
+    <!-- ethers v6 with multiple fallbacks -->
+    <script>
+      function loadScript(src, onload, onerror) {
+        var s = document.createElement('script');
+        s.src = src; s.onload = onload; s.onerror = onerror;
+        document.head.appendChild(s);
+      }
+      var ETHERS_CDNS = [
+        "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/index.umd.min.js",
+        "https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js",
+        "https://unpkg.com/ethers@6.13.2/dist/ethers.umd.min.js"
+      ];
+      var _idx = 0;
+      function tryNextCDN() {
+        if (_idx >= ETHERS_CDNS.length) {
+          document.getElementById('ethers-error').style.display='block'; return;
+        }
+        loadScript(ETHERS_CDNS[_idx++], function() {
+          console.log('ethers loaded from', ETHERS_CDNS[_idx-1]);
+        }, tryNextCDN);
+      }
+      tryNextCDN();
+    </script>
 </head>
 <body>
-    <h1>SNAKE WEB3 🐍</h1>
 
+    <!-- Network badge -->
+    <div class="network-status">
+        <img src="favicon.png" alt="Robinhood" class="nav-icon" onerror="this.src='https://cdn.robinhood.com/assets/generated_assets/hoodchain_docsite/feather-light.svg';this.onerror=null;">
+        <span>Robinhood Chain Testnet</span>
+    </div>
+
+    <!-- ASCII Logo -->
+    <pre class="ascii-logo">
+  ____  _  _   __   __ _  ____    ____   __   ____  __  __ _  _  _  __    __  ___ 
+ / ___)( \( ) / _\ (  / )(  __)  (  _ \ /  \ (  _ \(  )(  ( \/ )( \/  \  /  \(   )
+ \___ \ )  ( /    \ )  (  ) _)    )   /(  O ) ) _ ( )( /    /) __ (  O )(  O )) D (
+ (____/(_)\_)\_/\_/(__\_)(____)  (__\_) \__/ (____/(__)\_)__)(_)(_)\__/  \__/(___/ </pre>
+    <p class="tagline">🐍🏹 STEAL FROM THE BLOCK 🏹🐍</p>
+
+    <!-- ethers load error -->
+    <div id="ethers-error" style="display:none;color:#f55;margin:8px auto;">
+        ⚠️ Could not load ethers.js — check your internet connection and refresh.
+    </div>
+
+    <!-- Auth -->
     <div id="authSection">
-        <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+        <button id="connectBtn" onclick="connectWallet()">🦊 Connect MetaMask</button>
         <div id="walletInfo" style="display:none;">
-            <span id="walletAddr"></span> | <span id="playerName"></span>
+            <span id="walletAddr"></span>
+            <span id="playerName"></span>
         </div>
     </div>
 
-    <div id="nicknameModal" style="display:none; margin: 20px auto; width: 300px; border: 1px solid #0f0; padding: 10px;">
-        <input type="text" id="nickInput" placeholder="Choose a nickname">
-        <button onclick="saveNickname()">Register</button>
+    <!-- Transaction status -->
+    <div id="statusMsg" class="status-msg"></div>
+
+    <!-- Nickname Modal -->
+    <div id="nicknameModal" style="display:none;">
+        <div class="modal-inner">
+            <h3>⚔️ Welcome, Squire!</h3>
+            <p>Choose your on-chain nickname for the leaderboard:</p>
+            <input type="text" id="nickInput" placeholder="e.g. RobinHoodie..." maxlength="20">
+            <br><br>
+            <button onclick="saveNickname()">📜 Register on Chain</button>
+        </div>
     </div>
 
+    <!-- Main Layout -->
     <div class="main-container">
-        <div class="leaderboard-area">
-            <h3>🏆 Ranking</h3>
-            <ul id="leaderboardList"></ul>
+
+        <!-- Leaderboard -->
+        <div class="side-panel leaderboard-area">
+            <h3>🏆 On-Chain Leaderboard</h3>
+            <ul id="leaderboardList">
+                <li class="lb-empty">Connect wallet to load</li>
+            </ul>
+            <button class="btn-small" onclick="loadLeaderboard()">↺ Refresh</button>
         </div>
 
+        <!-- Game -->
         <div class="game-area">
             <canvas id="gameCanvas" width="400" height="400"></canvas>
-            <p>Score: <span id="score">0</span></p>
-            <button onclick="restartGame()">Restart</button>
+
+            <div class="game-stats">
+                <span>🐍 Score: <strong id="score">0</strong></span>
+                <span>👟 Moves: <strong id="steps">0</strong></span>
+            </div>
+
+            <!-- D-Pad -->
+            <div class="dpad">
+                <button class="dpad-btn dpad-up"     onclick="moveSnake('up')">▲</button>
+                <button class="dpad-btn dpad-left"   onclick="moveSnake('left')">◀</button>
+                <button class="dpad-btn dpad-center" disabled>●</button>
+                <button class="dpad-btn dpad-right"  onclick="moveSnake('right')">▶</button>
+                <button class="dpad-btn dpad-down"   onclick="moveSnake('down')">▼</button>
+            </div>
+
+            <button class="btn-restart" onclick="restartGame()">🔄 Restart</button>
         </div>
 
-       <div class="roulette-area">
-    <h3>🎰 Roulette</h3>
-    <button id="spinBtn" onclick="spinWheel(event)">Spin</button> 
-    <p>Steps: <span id="steps">0</span></p>
-   </div>
+        <!-- Spin Wheel -->
+        <div class="side-panel roulette-area">
+            <h3>🎰 Spin for Moves</h3>
+            <p class="roulette-desc">
+                Pay a small ETH fee and receive a random number of moves to play!
+            </p>
+            <button id="spinBtn" onclick="spinWheel()">🎰 Spin the Wheel</button>
+            <p class="spin-cost">Cost: ~0.00001 ETH</p>
+            <hr class="divider">
+            <p class="hint">
+                💡 When the game ends, your score is saved on-chain and appears on the leaderboard!
+            </p>
+        </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+    </div>
+
     <script src="web3.js"></script>
     <script src="game.js"></script>
 </body>
