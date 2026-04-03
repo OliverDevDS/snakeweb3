@@ -4,9 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Snake Robinhood 🐍</title>
-    <link rel="icon" type="image/png" href="favicon.png">
+    <!-- Favicon emoji via canvas (funciona em todos os browsers modernos) -->
+    <script>
+      (function() {
+        var canvas = document.createElement('canvas');
+        canvas.width = 32; canvas.height = 32;
+        var ctx = canvas.getContext('2d');
+        ctx.font = '28px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🐍', 16, 18);
+        var link = document.createElement('link');
+        link.rel = 'icon'; link.type = 'image/png';
+        link.href = canvas.toDataURL();
+        document.head.appendChild(link);
+        window._faviconLink = link;
+      })();
+
+      // Atualiza favicon conforme a rede ativa
+      window.updateFavicon = function(emoji) {
+        if (!window._faviconLink) return;
+        var canvas = document.createElement('canvas');
+        canvas.width = 32; canvas.height = 32;
+        var ctx = canvas.getContext('2d');
+        ctx.font = '26px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(emoji || '🐍', 16, 18);
+        window._faviconLink.href = canvas.toDataURL();
+      };
+    </script>
     <link rel="stylesheet" href="style.css">
-    <!-- ethers v6 with multiple fallbacks -->
     <script>
       function loadScript(src, onload, onerror) {
         var s = document.createElement('script');
@@ -34,9 +62,19 @@
 
     <!-- Network badge -->
     <div class="network-status">
-        <img src="favicon.png" alt="Robinhood" class="nav-icon" onerror="this.src='https://cdn.robinhood.com/assets/generated_assets/hoodchain_docsite/feather-light.svg';this.onerror=null;">
-        <span>Robinhood Chain Testnet</span>
+        <img src="favicon.png" alt="Robinhood" class="nav-icon"
+             onerror="this.src='https://cdn.robinhood.com/assets/generated_assets/hoodchain_docsite/feather-light.svg';this.onerror=null;">
+        <span id="chainBadge">🏹 Robinhood Chain</span>
     </div>
+
+    <!-- Mute button (canto superior esquerdo) -->
+    <button id="muteBtn" onclick="toggleMute()" title="Toggle sound"
+        style="position:fixed;top:12px;left:15px;padding:6px 12px;font-size:12px;
+               background:rgba(0,18,0,0.88);color:var(--green);border:1px solid var(--green);
+               border-radius:20px;z-index:1000;cursor:pointer;font-family:inherit;
+               box-shadow:0 0 10px rgba(0,255,68,0.15);">
+        🔊 Sound
+    </button>
 
     <!-- ASCII Logo -->
     <pre class="ascii-logo">
@@ -46,9 +84,19 @@
  (____/(_)\_)\_/\_/(__\_)(____)  (__\_) \__/ (____/(__)\_)__)(_)(_)\__/  \__/(___/ </pre>
     <p class="tagline">🐍🏹 STEAL FROM THE BLOCK 🏹🐍</p>
 
-    <!-- ethers load error -->
+    <!-- ethers error -->
     <div id="ethers-error" style="display:none;color:#f55;margin:8px auto;">
-        ⚠️ Could not load ethers.js — check your internet connection and refresh.
+        ⚠️ Could not load ethers.js — check your connection and refresh.
+    </div>
+
+    <!-- ── Chain Selector ── -->
+    <div class="chain-selector">
+        <button class="chain-btn active" data-chain="robinhood" onclick="switchChain('robinhood')">
+            🏹 Robinhood Chain
+        </button>
+        <button class="chain-btn" data-chain="arc" onclick="switchChain('arc')">
+            🌐 Arc Testnet
+        </button>
     </div>
 
     <!-- Auth -->
@@ -60,7 +108,7 @@
         </div>
     </div>
 
-    <!-- Transaction status -->
+    <!-- Status -->
     <div id="statusMsg" class="status-msg"></div>
 
     <!-- Nickname Modal -->
@@ -111,10 +159,19 @@
         <div class="side-panel roulette-area">
             <h3>🎰 Spin for Moves</h3>
             <p class="roulette-desc">
-                Pay a small ETH fee and receive a random number of moves to play!
+                Pay a small fee and receive a random number of moves to play!
             </p>
             <button id="spinBtn" onclick="spinWheel()">🎰 Spin the Wheel</button>
-            <p class="spin-cost">Cost: ~0.00001 ETH</p>
+            <p class="spin-cost" id="spinCost">Cost: ~0.00001 ETH</p>
+            <hr class="divider">
+            <div class="network-info">
+                <p class="hint">
+                    🏹 <strong>Robinhood Chain</strong> — pay in ETH
+                </p>
+                <p class="hint" style="margin-top:6px">
+                    🌐 <strong>Arc Testnet</strong> — pay in USDC
+                </p>
+            </div>
             <hr class="divider">
             <p class="hint">
                 💡 When the game ends, your score is saved on-chain and appears on the leaderboard!
@@ -125,5 +182,14 @@
 
     <script src="web3.js"></script>
     <script src="game.js"></script>
+
+    <!-- Atualiza favicon quando muda de rede -->
+    <script>
+      var _origOnChainSwitch = window.onChainSwitch;
+      window.onChainSwitch = function(chain) {
+        if (_origOnChainSwitch) _origOnChainSwitch(chain);
+        window.updateFavicon(chain.id === 'arc' ? '🌐' : '🏹');
+      };
+    </script>
 </body>
 </html>
